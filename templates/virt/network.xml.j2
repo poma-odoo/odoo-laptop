@@ -1,0 +1,12 @@
+<network>
+  <name>default</name>
+  <uuid>{{ 666 | to_uuid }}</uuid>
+  <forward mode="nat"/>
+  <bridge name="virbr0" stp="on" delay="0"/>
+  <mac address="{{ '52:54:00' | community.general.random_mac(seed=666) }}"/>
+  <ip address="10.10.10.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="10.10.10.2" end="10.10.10.254"/>
+    </dhcp>
+  </ip>
+</network>

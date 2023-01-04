@@ -2,6 +2,7 @@
   hosts: poma-laptop
 
   vars:
+    username: poma
     systemwide_env:
       - key: EDITOR
         value: vim
@@ -12,26 +13,50 @@
         value: '1'
 
   tasks:
-    - name: Create the `aur_builder` user
+    - name: Ensure main user preset
       become: yes
+      ansible.builtin.user:
+        name: '{{ username }}'
+        create_home: yes
+        generate_ssh_key: yes
+        ssh_key_type: ed25519
+        append: yes
+        group: '{{ username }}'
+        groups: 
+          - sudo
+          - docker
+      register: user
+      tags:
+        - always 
+
+    - name: Create the `aur_builder` user
       ansible.builtin.user:
         name: aur_builder
         create_home: yes
         group: wheel
+      become: yes
+      tags:
+        - packages
     
     - name: Allow the `aur_builder` user to run `sudo pacman` without a password
-      become: yes
-      ansible.builtin.lineinfile:
+      lineinfile:
         path: /etc/sudoers.d/11-install-aur_builder
         line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
         create: yes
         validate: 'visudo -cf %s'
+      become: yes
+      tags:
+        - packages
     
     - name: "Install AUR package manager yay"
       package:
         name:
           - yay
         state: present
+      become: yes
+      tags:
+        - packages
+
 
     - name: 'instal Multimedia packages'
       package:
@@ -40,6 +65,9 @@
           - ffmpeg
           - youtube-dl
         state: present
+      become: yes
+      tags:
+        - packages
 
     - name: 'instal Multimedia packages yay'
       kewlfft.aur.aur:
@@ -49,19 +77,78 @@
         state: present
       become: yes
       become_user: aur_builder
-
+      tags:
+        - packages
     - name: 'Install connectivity packages'
       package:
         name:
           - kdeconnect
           - blueberry
+      become: yes
+      tags:
+        - packages
             
     - name: 'Install utility packages'
       package:
         name:
           - gimp
           - vim
-            
+          - libsecret
+          - keepassxc
+          - wl-clipboard
+      become: yes
+      tags:
+        - packages
+
+    - name: 'Install qemu based vistualizasion'
+      package:
+        name:
+          - libvirt
+          - bridge-utils  
+          - qemu-full
+          - virt-install
+          - virt-viewer
+      become: yes
+      tags:
+        - packages
+        - virt
+        - lab
+
+  #- name: 'Init libvirt Network'
+  #    community.libvirt.virt_net:
+  #      command: define
+  #      name: virnet0
+  #      xml: '{{ lookup("template", "templates/virt/network.xml.j2") }}'
+  #      Instead enable default network
+  #    tags:
+  #      - packages
+  #      - virt
+           
+    - name: 'Prepare for virtualbox installation'
+      package:
+        name:
+          - virtualbox-host-dkms
+        state: absent
+      tags:
+        - packages
+        - virt
+
+    - name: 'Install virtualbox'
+      package:
+        name:
+          - virtualbox
+          - virtualbox-host-modules-arch
+      tags:
+        - packages
+        - virt
+
+    - name: 'Load vistualbox kernel module'
+      community.general.modprobe:
+        name: vboxdrv
+      tags:
+        - packages
+        - virt
+
     - name: 'Setup environment variables'
       ansible.builtin.lineinfile:
         dest: "/etc/environment"
@@ -69,3 +156,77 @@
         regexp: "^{{ item.key }}="
         line: "{{ item.key }}={{ item.value }}"
       with_items: "{{ systemwide_env }}"
+      tags:
+        - config
+        
+
+    - name: 'Install cipboard Manager'
+      kewlfft.aur.aur:
+        name:
+          - clipman
+        use: yay
+        state: present
+      become: yes
+      become_user: aur_builder
+      tags:
+        - config
+        - sway
+        - packages
+
+    - name: 'Clear sway default config'
+      file:
+        path: "{{ user['home'] }}/.config/sway/config.d"
+        state: absent
+      tags:
+        - config
+        - sway
+
+    - name: 'Recreate  sway config folder'
+      file:
+        path: "{{ user['home'] }}/.config/sway/config.d"
+        state: directory
+        owner: '{{ username }}'
+        group: '{{ username }}'
+        mode: '0755'
+      tags:
+        - config
+        - sway
+
+    - name: 'Setup sway config'
+      template:
+        src: "{{ item }}"
+        dest: "{{ user['home'] }}/.config/sway/config.d/{{ item | basename | regex_replace('\\.j2$', '') }}"
+        owner: '{{ username }}'
+        group: '{{ username }}'
+        mode: '0644'
+      with_fileglob:
+        - "templates/sway/*.j2"
+      tags:
+        - config
+        - sway
+
+    - name: 'Ensure sway config folder is loaded'
+      lineinfile:
+        dest: "{{ user['home'] }}/.config/sway/config"
+        create: yes
+        owner: '{{ username }}'
+        state: present
+        line: "include $HOME/.config/sway/config.d/*"
+      tags:
+        - config
+        - sway
+
+      #    - name: 'Setup sway config lock screen'
+      #      ansible.builtin.blockinfile:
+      #        dest: "{{ user['home'] }}/.config/sway/config.d/10-lock"
+      #        create: yes
+      #        owner: '{{ username }}'
+      #        state: present
+      #        line: "{{ item }}"
+      #      with_items: 
+      #        - set $mod Mod4
+      #        - set $left h
+      #        - set $down j
+      #        - set $up k
+      #        - set $right l
+

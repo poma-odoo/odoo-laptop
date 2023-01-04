@@ -1,0 +1,15 @@
+# This file is handled by ansible, the local changes will be overiden
+
+# Drag floating windows by holding down $mod and left mouse button.
+    # Resize them with right mouse button + $mod.
+    # Despite the name, also works for non-floating windows.
+    # Change normal to inverse to use left mouse button for resizing and right
+    # mouse button for dragging.
+    floating_modifier $mod normal
+
+# Resize floating windows with mouse scroll:
+    bindsym --whole-window --border $mod+button4 resize shrink height 5 px or 5 ppt
+    bindsym --whole-window --border $mod+button5 resize grow height 5 px or 5 ppt
+    bindsym --whole-window --border $mod+Shift+button4 resize shrink width 5 px or 5 ppt
+    bindsym --whole-window --border $mod+Shift+button5 resize grow width 5 px or 5 ppt
+
