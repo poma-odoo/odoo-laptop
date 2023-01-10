@@ -12,8 +12,14 @@
       - key: _JAVA_AWT_WM_NONREPARENTING
         value: '1'
 
+    command_aliases:
+      - alias: ap
+        command: 'ansible-playbook'
+      - alias: adm
+        command: 'ansible-doc -t module'
+
   tasks:
-    - name: Ensure main user preset
+    - name: Ensure main user's access groups
       become: yes
       ansible.builtin.user:
         name: '{{ username }}'
@@ -93,6 +99,7 @@
         name:
           - gimp
           - vim
+          - vim-ansible
           - libsecret
           - keepassxc
           - wl-clipboard
@@ -156,6 +163,17 @@
         regexp: "^{{ item.key }}="
         line: "{{ item.key }}={{ item.value }}"
       with_items: "{{ systemwide_env }}"
+      tags:
+        - config
+
+    - name: 'Setup command aliases'
+      lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: "alias {{ item.alias }}='{{ item.command }}'"
+        insertafter: "^alias .*="
+        firstmatch: True
+      with_items: "{{ command_aliases }}"
       tags:
         - config
         
