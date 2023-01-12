@@ -14,9 +14,13 @@
 
     command_aliases:
       - alias: ap
-        command: 'ansible-playbook'
+        command: 'sudo ansible-playbook'
       - alias: adm
         command: 'ansible-doc -t module'
+      - alias: top
+        command: 'top -o %MEM'
+      - alias: code
+        command: 'vscodium'
 
   tasks:
     - name: Ensure main user's access groups
@@ -75,7 +79,7 @@
       tags:
         - packages
 
-    - name: 'instal Multimedia packages yay'
+    - name: 'install extra Multimedia packages '
       kewlfft.aur.aur:
         name:
           - sbagen
@@ -85,6 +89,7 @@
       become_user: aur_builder
       tags:
         - packages
+
     - name: 'Install connectivity packages'
       package:
         name:
@@ -93,15 +98,39 @@
       become: yes
       tags:
         - packages
-            
+          
+    - name: 'Install development base packages'
+      package:
+        name:
+          - nodejs
+          - gettext
+      become: yes
+      tags:
+        - packages
+        - dev
+
+    - name: 'Install development tools packages'
+      package:
+        name:
+          - git
+          - pycharm-community-edition 
+          - plantuml
+          - vscodium-bin
+          - vim-ansible
+          - ansible-lint
+      become: yes
+      tags:
+        - packages
+        - dev
+
     - name: 'Install utility packages'
       package:
         name:
           - gimp
           - vim
-          - vim-ansible
           - libsecret
           - keepassxc
+          - mc
           - wl-clipboard
       become: yes
       tags:
