@@ -6,7 +6,7 @@
     systemwide_env:
       - key: EDITOR
         value: vim
-      - key: BROWSER 
+      - key: BROWSER
         value: google-chrome-stable
       # make java programs (I mean jetbrains) work with wayland
       - key: _JAVA_AWT_WM_NONREPARENTING
@@ -24,107 +24,107 @@
 
   tasks:
     - name: Ensure main user's access groups
-      become: yes
       ansible.builtin.user:
         name: '{{ username }}'
-        create_home: yes
-        generate_ssh_key: yes
+        create_home: true
+        generate_ssh_key: true
         ssh_key_type: ed25519
-        append: yes
+        append: true
         group: '{{ username }}'
-        groups: 
+        groups:
           - sudo
-          - docker
+      become: true
       register: user
       tags:
-        - always 
+        - always
 
     - name: Create the `aur_builder` user
       ansible.builtin.user:
         name: aur_builder
-        create_home: yes
+        create_home: true
         group: wheel
-      become: yes
+      become: true
       tags:
         - packages
-    
+
     - name: Allow the `aur_builder` user to run `sudo pacman` without a password
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/sudoers.d/11-install-aur_builder
         line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
-        create: yes
+        create: true
+        mode: 0440
         validate: 'visudo -cf %s'
-      become: yes
+      become: true
       tags:
         - packages
-    
+
     - name: "Install AUR package manager yay"
-      package:
+      ansible.builtin.package:
         name:
           - yay
         state: present
-      become: yes
+      become: true
       tags:
         - packages
 
 
-    - name: 'instal Multimedia packages'
-      package:
+    - name: 'Install Multimedia packages'
+      ansible.builtin.package:
         name:
           - mpv
           - ffmpeg
           - youtube-dl
         state: present
-      become: yes
+      become: true
       tags:
         - packages
 
-    - name: 'install extra Multimedia packages '
+    - name: 'Install extra Multimedia packages '
       kewlfft.aur.aur:
         name:
           - sbagen
         use: yay
         state: present
-      become: yes
+      become: true
       become_user: aur_builder
       tags:
         - packages
 
     - name: 'Install connectivity packages'
-      package:
+      ansible.builtin.package:
         name:
           - kdeconnect
           - blueberry
-      become: yes
+      become: true
       tags:
         - packages
-          
+
     - name: 'Install development base packages'
-      package:
+      ansible.builtin.package:
         name:
           - nodejs
           - gettext
-      become: yes
+      become: true
       tags:
         - packages
         - dev
 
     - name: 'Install development tools packages'
-      package:
+      ansible.builtin.package:
         name:
           - git
-          - pycharm-community-edition 
+          - pycharm-community-edition
           - plantuml
           - vscodium-bin
           - vim-ansible
           - ansible-lint
-      become: yes
+      become: true
       tags:
         - packages
         - dev
 
     - name: 'Install utility packages'
-      package:
+      ansible.builtin.package:
         name:
           - gimp
           - vim
@@ -132,25 +132,25 @@
           - keepassxc
           - mc
           - wl-clipboard
-      become: yes
+      become: true
       tags:
         - packages
 
     - name: 'Install qemu based vistualizasion'
-      package:
+      ansible.builtin.package:
         name:
           - libvirt
-          - bridge-utils  
+          - bridge-utils
           - qemu-full
           - virt-install
           - virt-viewer
-      become: yes
+      become: true
       tags:
         - packages
         - virt
         - lab
 
-  #- name: 'Init libvirt Network'
+  # - name: 'Init libvirt Network'
   #    community.libvirt.virt_net:
   #      command: define
   #      name: virnet0
@@ -159,9 +159,9 @@
   #    tags:
   #      - packages
   #      - virt
-           
+
     - name: 'Prepare for virtualbox installation'
-      package:
+      ansible.builtin.package:
         name:
           - virtualbox-host-dkms
         state: absent
@@ -170,7 +170,7 @@
         - virt
 
     - name: 'Install virtualbox'
-      package:
+      ansible.builtin.package:
         name:
           - virtualbox
           - virtualbox-host-modules-arch
@@ -196,16 +196,16 @@
         - config
 
     - name: 'Setup command aliases'
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: "{{ user['home'] }}/.bashrc"
         state: present
         line: "alias {{ item.alias }}='{{ item.command }}'"
         insertafter: "^alias .*="
-        firstmatch: True
+        firstmatch: true
       with_items: "{{ command_aliases }}"
       tags:
         - config
-        
+
 
     - name: 'Install cipboard Manager'
       kewlfft.aur.aur:
@@ -213,7 +213,7 @@
           - clipman
         use: yay
         state: present
-      become: yes
+      become: true
       become_user: aur_builder
       tags:
         - config
@@ -221,7 +221,7 @@
         - packages
 
     - name: 'Clear sway default config'
-      file:
+      ansible.builtin.file:
         path: "{{ user['home'] }}/.config/sway/config.d"
         state: absent
       tags:
@@ -229,7 +229,7 @@
         - sway
 
     - name: 'Recreate  sway config folder'
-      file:
+      ansible.builtin.file:
         path: "{{ user['home'] }}/.config/sway/config.d"
         state: directory
         owner: '{{ username }}'
@@ -240,12 +240,12 @@
         - sway
 
     - name: 'Setup sway config'
-      template:
+      ansible.builtin.template:
         src: "{{ item }}"
         dest: "{{ user['home'] }}/.config/sway/config.d/{{ item | basename | regex_replace('\\.j2$', '') }}"
         owner: '{{ username }}'
         group: '{{ username }}'
-        mode: '0644'
+        mode: '0640'
       with_fileglob:
         - "templates/sway/*.j2"
       tags:
@@ -253,10 +253,11 @@
         - sway
 
     - name: 'Ensure sway config folder is loaded'
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: "{{ user['home'] }}/.config/sway/config"
-        create: yes
+        create: true
         owner: '{{ username }}'
+        mode: '0640'
         state: present
         line: "include $HOME/.config/sway/config.d/*"
       tags:
@@ -266,14 +267,13 @@
       #    - name: 'Setup sway config lock screen'
       #      ansible.builtin.blockinfile:
       #        dest: "{{ user['home'] }}/.config/sway/config.d/10-lock"
-      #        create: yes
+      #        create: true
       #        owner: '{{ username }}'
       #        state: present
       #        line: "{{ item }}"
-      #      with_items: 
+      #      with_items:
       #        - set $mod Mod4
       #        - set $left h
       #        - set $down j
       #        - set $up k
       #        - set $right l
-
