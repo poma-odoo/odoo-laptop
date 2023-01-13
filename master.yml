@@ -226,77 +226,75 @@
       tags:
         - config
 
-
-    - name: 'Install cipboard Manager'
-      kewlfft.aur.aur:
-        name:
-          - clipman
-        use: yay
-        state: present
-      become: true
-      become_user: aur_builder
+    - name: 'Config sway'
       tags:
         - config
         - sway
-        - packages
+      block:
+        - name: 'Install cipboard Manager'
+          kewlfft.aur.aur:
+            name:
+              - clipman
+            use: yay
+            state: present
+          become: true
+          become_user: aur_builder
+          tags:
+            - packages
 
-    - name: 'Clear sway default config'
-      ansible.builtin.file:
-        path: "{{ user['home'] }}/.config/sway/config.d"
-        state: absent
-      tags:
-        - config
-        - sway
+        - name: 'Sway config folder present'
+          ansible.builtin.file:
+            path: "{{ user['home'] }}/.config/sway/config.d"
+            state: directory
+            owner: '{{ username }}'
+            group: '{{ username }}'
+            mode: '0755'
 
-    - name: 'Recreate  sway config folder'
-      ansible.builtin.file:
-        path: "{{ user['home'] }}/.config/sway/config.d"
-        state: directory
-        owner: '{{ username }}'
-        group: '{{ username }}'
-        mode: '0755'
-      tags:
-        - config
-        - sway
+        - name: 'Unmanaged sway config files'
+          ansible.builtin.find:
+            paths: "{{ user['home'] }}/.config/sway/config.d"
+            excludes: "{{ lookup('ansible.builtin.fileglob', 'templates/sway/*.j2', wantlist=True) | map('basename') | map('regex_replace', '\\.j2$', '') }}"
+          register: unmanaged_sway_configs
 
-    - name: 'Setup sway config'
-      ansible.builtin.template:
-        src: "{{ item }}"
-        dest: "{{ user['home'] }}/.config/sway/config.d/{{ item | basename | regex_replace('\\.j2$', '') }}"
-        owner: '{{ username }}'
-        group: '{{ username }}'
-        mode: '0640'
-      with_fileglob:
-        - "templates/sway/*.j2"
-      tags:
-        - config
-        - sway
+        - name: 'Clear sway default config'
+          ansible.builtin.file:
+            path: "{{ item.path }}"
+            state: absent
+          with_items: "{{ unmanaged_sway_configs.files }}"
 
-    - name: 'Ensure sway config folder is loaded'
-      ansible.builtin.lineinfile:
-        dest: "{{ user['home'] }}/.config/sway/config"
-        create: true
-        owner: '{{ username }}'
-        mode: '0640'
-        state: present
-        line: "include $HOME/.config/sway/config.d/*"
-      tags:
-        - config
-        - sway
+        - name: 'Setup sway config'
+          ansible.builtin.template:
+            src: "{{ item }}"
+            dest: "{{ user['home'] }}/.config/sway/config.d/{{ item | basename | regex_replace('\\.j2$', '') }}"
+            owner: '{{ username }}'
+            group: '{{ username }}'
+            mode: '0640'
+          with_fileglob:
+            - "templates/sway/*.j2"
 
-      #    - name: 'Setup sway config lock screen'
-      #      ansible.builtin.blockinfile:
-      #        dest: "{{ user['home'] }}/.config/sway/config.d/10-lock"
-      #        create: true
-      #        owner: '{{ username }}'
-      #        state: present
-      #        line: "{{ item }}"
-      #      with_items:
-      #        - set $mod Mod4
-      #        - set $left h
-      #        - set $down j
-      #        - set $up k
-      #        - set $right l
+        - name: 'Ensure sway config folder is loaded'
+          ansible.builtin.lineinfile:
+            dest: "{{ user['home'] }}/.config/sway/config"
+            create: true
+            owner: '{{ username }}'
+            mode: '0640'
+            state: present
+            line: "include $HOME/.config/sway/config.d/*"
+
+          #    - name: 'Setup sway config lock screen'
+          #      ansible.builtin.blockinfile:
+          #        dest: "{{ user['home'] }}/.config/sway/config.d/10-lock"
+          #        create: true
+          #        owner: '{{ username }}'
+          #        state: present
+          #        line: "{{ item }}"
+          #      with_items:
+          #        - set $mod Mod4
+          #        - set $left h
+          #        - set $down j
+          #        - set $up k
+          #        - set $right l
+
   handlers:
     - name: 'Message about docker group'
       ansible.builtin.debug:
