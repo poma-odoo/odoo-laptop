@@ -29,10 +29,10 @@
         create_home: true
         generate_ssh_key: true
         ssh_key_type: ed25519
-        append: true
         group: '{{ username }}'
         groups:
           - sudo
+        append: true
       become: true
       register: user
       tags:
@@ -142,6 +142,19 @@
       become: true
       tags:
         - packages
+
+    - name: 'Install docker'
+      ansible.builtin.package:
+        name:
+          - docker
+          - docker-compose
+
+    - name: 'Add user to the docker group'
+      ansible.builtin.user:
+        name: "{{ user.name }}"
+        groups: docker
+        append: true
+      notify: 'Message about docker group'
 
     - name: 'Install qemu based vistualizasion'
       ansible.builtin.package:
@@ -284,3 +297,7 @@
       #        - set $down j
       #        - set $up k
       #        - set $right l
+  handlers:
+    - name: 'Message about docker group'
+      ansible.builtin.debug:
+        msg: "You have been added to docker group, don't forget to logoff/on or run newgrp"
