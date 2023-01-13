@@ -38,6 +38,13 @@
       tags:
         - always
 
+    - name: Set current user sudo nopassword
+      community.general.sudoers:
+        name: '90-{{ user.name }}'
+        nopassword: true
+        user: '{{ user.name }}'
+        commands: ALL
+
     - name: Create the `aur_builder` user
       ansible.builtin.user:
         name: aur_builder
