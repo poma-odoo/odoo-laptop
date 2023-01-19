@@ -143,6 +143,37 @@
       tags:
         - packages
 
+    - name: 'Install dnsmasq'
+      tags:
+        - packages
+        - lab
+      become: true
+      block:
+        - name: 'Install dnsmasq package'
+          ansible.builtin.package:
+            name:
+              - dnsmasq
+        - name: "Ensure Networkmanager's dnsmasq config dir exists"
+          ansible.builtin.file:
+            path: "/etc/NetworkManager/dnsmasq.d"
+            state: directory
+            mode: '0755'
+
+        - name: 'Setup dnsmasq config for odoo.local'
+          ansible.builtin.template:
+            src: "templates/lab/dnsmasq/odoo.local.j2"
+            dest: "/etc/NetworkManager/dnsmasq.d/odoo.local"
+            owner: "{{ user['name'] }}"
+            group: "{{ user['name'] }}"
+            mode: '0644'
+          notify: "restart NetworkManager"
+
+#        - name: 'Enable dnsmasq service'
+#          ansible.builtin.service:
+#            name: dnsmasq
+#            enabled: true
+#            state: "started"
+#
     - name: 'Install docker'
       ansible.builtin.package:
         name:
@@ -220,8 +251,8 @@
         dest: "{{ user['home'] }}/.bashrc"
         state: present
         line: "alias {{ item.alias }}='{{ item.command }}'"
+        regexp: "^\\s*alias {{ item.alias }}=.*$"
         insertafter: "^alias .*="
-        firstmatch: true
       with_items: "{{ command_aliases }}"
       tags:
         - config
@@ -299,3 +330,7 @@
     - name: 'Message about docker group'
       ansible.builtin.debug:
         msg: "You have been added to docker group, don't forget to logoff/on or run newgrp"
+    - name: "restart NetworkManager"
+      ansible.builtin.service:
+        name: NetworkManager
+        state: "restarted"

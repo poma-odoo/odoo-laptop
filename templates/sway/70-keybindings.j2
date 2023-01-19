@@ -2,43 +2,46 @@
 
 {% set directions = ['left', 'right', 'up', 'down'] %}
 ### Key bindings
+
+$bindsym {
 #
 # Basics:
 #
     # Start a floating terminal
-    bindsym $mod+Return exec $term-float
+    $mod+Return exec $term-float
 
     # Open the power menu
-    bindsym $mod+Shift+e exec $powermenu
+    $mod+Shift+e exec $powermenu
 
     # Kill focused window
-    bindsym $mod+q kill
+    $mod+q kill
 
     # Start your launcher
-    bindsym $mod+d exec $menu
+    $mod+d exec $menu
 
     # Activities
-    bindsym $mod+p exec ~/.config/wofi/windows.py
+    $mod+p exec ~/.config/wofi/windows.py
 
     # Reload the configuration file
-    bindsym $mod+Shift+c reload
+    $mod+Shift+c reload
 
     # Lock Screen (required 30-lockscreen)
-    bindsym $mod+f1 exec $lockme
+    $mod+f1 exec $lockme
 
 #
 # Moving around:
 #
     # Move your focus around
 {% for d in directions%}
-    bindsym $mod+${{ d }} focus {{ d }}
-    bindsym $mod+{{ d | capitalize }} focus {{ d }}
+    $mod+${{ d }} focus {{ d }}
+    $mod+{{ d | capitalize }} focus {{ d }}
 {% endfor %}
+
 
     # Move the focused window with the same, but add Shift
 {% for d in directions%}
-    bindsym $mod+Shift+${{ d }} move {{ d }}
-    bindsym $mod+Shift+{{ d | capitalize }} move {{ d }}
+    $mod+Shift+${{ d }} move {{ d }}
+    $mod+Shift+{{ d | capitalize }} move {{ d }}
 {% endfor %}
 
 #
@@ -46,18 +49,18 @@
 #
     # Switch to workspace
 {% for ws in range(1,11)%}
-    bindsym $mod+{{ ws % 10 }} workspace number {{ ws }}
+    $mod+{{ ws % 10 }} workspace number {{ ws }}
 {% endfor %}
 
     # Move focused container to workspace
 {% for ws in range(1,11)%}
-    bindsym $mod+Shift+{{ ws % 10 }} move container to workspace number {{ ws }}
+    $mod+Shift+{{ ws % 10 }} move container to workspace number {{ ws }}
 {% endfor %}
 
     # moving workspaces 
 {% for d in directions%}
-    bindsym $mod+Control+${{ d }} move workspace to output {{ d }}
-    bindsym $mod+Control+{{ d | capitalize }} move workspace to output {{ d }}
+    $mod+Control+${{ d }} move workspace to output {{ d }}
+    $mod+Control+{{ d | capitalize }} move workspace to output {{ d }}
 {% endfor %}
 
 #
@@ -66,25 +69,25 @@
     # You can "split" the current object of your focus with
     # $mod+b or $mod+v, for horizontal and vertical splits
     # respectively.
-    bindsym $mod+b splith
-    bindsym $mod+v splitv
+    $mod+b splith
+    $mod+v splitv
 
     # Switch the current container between different layout styles
-    bindsym $mod+s layout stacking
-    bindsym $mod+w layout tabbed
-    bindsym $mod+x layout toggle split
+    $mod+s layout stacking
+    $mod+w layout tabbed
+    $mod+x layout toggle split
 
     # Make the current focus fullscreen
-    bindsym $mod+f fullscreen
+    $mod+f fullscreen
 
     # Toggle the current focus between tiling and floating mode
-    bindsym $mod+Shift+space floating toggle
+    $mod+Shift+space floating toggle
 
     # Swap focus between the tiling area and the floating area
-    bindsym $mod+space focus mode_toggle
+    $mod+space focus mode_toggle
 
     # Move focus to the parent container
-    bindsym $mod+a focus parent
+    $mod+a focus parent
 
 #
 # Scratchpad:
@@ -93,11 +96,53 @@
     # You can send windows there and get them back later.
 
     # Move the currently focused window to the scratchpad
-    bindsym $mod+Shift+minus move scratchpad
+    $mod+Shift+minus move scratchpad
 
     # Show the next scratchpad window or hide the focused scratchpad window.
     # If there are multiple scratchpad windows, this command cycles through them.
-    bindsym $mod+minus scratchpad show
+    $mod+minus scratchpad show
+
+#
+# Player
+#
+    XF86AudioPlay exec playerctl play
+    XF86AudioPause exec playerctl pause
+    XF86AudioNext exec playerctl next
+    XF86AudioPrev exec playerctl previous
+
+#
+# Backlight
+#
+    XF86MonBrightnessUp exec brightnessctl -c backlight set +5%
+    XF86MonBrightnessDown exec brightnessctl -c backlight set 5%-
+
+#
+# App shortcuts
+#
+    $mod+e exec thunar
+
+#
+# Screenshots
+#
+    print exec /usr/share/sway/scripts/grimshot --notify save output
+    Shift+print exec ~/.config/sway/scripts/screenshot.sh
+}
+
+$bindsym --locked {
+#
+# Volume
+#
+    # Control volume trough pamixer
+    # bindsym --locked XF86AudioRaiseVolume exec pamixer -ui 2
+    # bindsym --locked XF86AudioLowerVolume exec pamixer -ud 2
+    # bindsym --locked XF86AudioMute exec pamixer -t
+    
+    # Control volume directly trough pactl
+      XF86AudioRaiseVolume exec $volume_up
+      XF86AudioLowerVolume exec $volume_down
+      XF86AudioMute exec $volume_mute
+}
+
 
 #
 # Resizing containers:
@@ -108,64 +153,26 @@ mode "resize" {
     # up will shrink the containers height
     # down will grow the containers height
     # add shift to move the floating window in this mode
-    
-    bindsym $left  resize shrink width
-    bindsym Left  resize shrink width 
-    bindsym $right resize grow width 
-    bindsym Right resize grow width 
-    bindsym $up    resize shrink height
-    bindsym Up    resize shrink height
-    bindsym $down  resize grow height 
-    bindsym Down  resize grow height 
+    $bindsym {
+     $left  resize shrink width
+     Left  resize shrink width 
+     $right resize grow width 
+     Right resize grow width 
+     $up    resize shrink height
+     Up    resize shrink height
+     $down  resize grow height 
+     Down  resize grow height 
 
 {% for d in directions%}
-    bindsym Shift+${{ d }} move {{ d }}
-    bindsym Shift+{{ d | capitalize }} move {{ d }}
+     Shift+${{ d }} move {{ d }}
+     Shift+{{ d | capitalize }} move {{ d }}
 {% endfor %}
 
     # Return to default mode
-    bindsym Return mode "default"
-    bindsym Escape mode "default"
+     Return mode "default"
+     Escape mode "default"
+    }
 }
 
-bindsym $mod+r mode "resize"
-
-#
-# Volume
-#
-    # Control volume trough pamixer
-    # bindsym --locked XF86AudioRaiseVolume exec pamixer -ui 2
-    # bindsym --locked XF86AudioLowerVolume exec pamixer -ud 2
-    # bindsym --locked XF86AudioMute exec pamixer -t
-    
-    # Control volume directly trough pactl
-    bindsym --locked XF86AudioRaiseVolume exec $volume_up
-    bindsym --locked XF86AudioLowerVolume exec $volume_down
-    bindsym --locked XF86AudioMute exec $volume_mute
-
-#
-# Player
-#
-    bindsym XF86AudioPlay exec playerctl play
-    bindsym XF86AudioPause exec playerctl pause
-    bindsym XF86AudioNext exec playerctl next
-    bindsym XF86AudioPrev exec playerctl previous
-
-#
-# Backlight
-#
-    bindsym XF86MonBrightnessUp exec brightnessctl -c backlight set +5%
-    bindsym XF86MonBrightnessDown exec brightnessctl -c backlight set 5%-
-
-#
-# App shortcuts
-#
-    bindsym $mod+e exec thunar
-
-#
-# Screenshots
-#
-    bindsym print exec /usr/share/sway/scripts/grimshot --notify save output
-    bindsym Shift+print exec ~/.config/sway/scripts/screenshot.sh
-
+$bindsym $mod+r mode "resize"
 
