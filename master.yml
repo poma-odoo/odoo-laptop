@@ -326,6 +326,14 @@
           #        - set $up k
           #        - set $right l
 
+        # validate is not working when sway is running with No DRM backend supplied error
+        # - name: 'ensure sway config is valid'
+        #   ansible.builtin.command: "sway -c {{ user['home'] }}/.config/sway/config --validate --verbose"
+        #   become: true
+        #   become_user: "{{ user['name'] }}"
+        #   # for method: https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_privilege_escalation.html#may-not-access-environment-variables-populated-by-pamd-systemd
+        #   become_method: machinectl
+
   handlers:
     - name: 'Message about docker group'
       ansible.builtin.debug:

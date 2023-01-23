@@ -44,6 +44,9 @@ $bindsym {
     $mod+Shift+{{ d | capitalize }} move {{ d }}
 {% endfor %}
 
+    Mod1+Tab focus next
+    Mod1+Shift+Tab focus prev
+
 #
 # Workspaces:
 #
@@ -62,7 +65,8 @@ $bindsym {
     $mod+Control+${{ d }} move workspace to output {{ d }}
     $mod+Control+{{ d | capitalize }} move workspace to output {{ d }}
 {% endfor %}
-
+    $mod+Tab workspace next
+    $mod+Shift+Tab workspace prev
 #
 # Layout stuff:
 #

@@ -7,9 +7,15 @@
     # mouse button for dragging.
     floating_modifier $mod normal
 
-# Resize floating windows with mouse scroll:
+# Resize focused windows with mouse scroll:
     bindsym --whole-window --border $mod+button4 resize shrink height 5 px or 5 ppt
     bindsym --whole-window --border $mod+button5 resize grow height 5 px or 5 ppt
     bindsym --whole-window --border $mod+Shift+button4 resize shrink width 5 px or 5 ppt
     bindsym --whole-window --border $mod+Shift+button5 resize grow width 5 px or 5 ppt
+
+# Move window with mouse back and forward button
+    bindsym --whole-window --border $mod+button8 move down
+    bindsym --whole-window --border $mod+button9 move up
+    bindsym --whole-window --border $mod+Shift+button8 move left
+    bindsym --whole-window --border $mod+Shift+button9 move right
 

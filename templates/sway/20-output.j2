@@ -12,11 +12,13 @@
 #   input "1386:884:Wacom_Intuos_S_Pad" map_to_output HDMI-A-1
 #   input "1386:884:Wacom_Intuos_S_Pen" map_to_output HDMI-A-1
 #   
-    output eDP-1 position 0,1080 scale 1.2
+    output eDP-1 position 160,1080 scale 1.2
     output DP-1 position 0,0
     output DP-2 position 0,0
+    output DP-3 position 0,0
+    output DP-4 position 0,0
 
-    workspace 4 output DP-2
+    workspace 4 output DP-1 DP-2 DP-3 DP-4
     workspace 2 output eDP-1 
 
 # Clamshell Mode
