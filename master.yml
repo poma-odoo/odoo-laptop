@@ -21,8 +21,32 @@
         command: 'top -o %MEM'
       - alias: code
         command: 'vscodium'
+    bash_variables:
+      # increase history lines to keep
+      - name: HISTSIZE
+        value: 10000
+      - name: HISTFILESIZE
+        value: 10000
+      # append current session's command to history on execute, clear history cache and reread 
+      # history file, don't wait for exit to do so. 
+      # It results in sharing command history of all open shells, and prevents loosing history 
+      # when the os hangs or for example pycharm is killed with some terminals
+      - name: PROMPT_COMMAND
+        value: "${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
+          
 
   tasks:
+    - name: Ensure odoo user exists
+      ansible.builtin.user:
+        name: 'odoo'
+        create_home: true
+        generate_ssh_key: false
+        ssh_key_type: ed25519
+        home: '/home/odoo'
+        hidden: true
+      become: true
+      when: username != 'odoo'
+
     - name: Ensure main user's access groups
       ansible.builtin.user:
         name: '{{ username }}'
@@ -32,6 +56,7 @@
         group: '{{ username }}'
         groups:
           - sudo
+          - odoo
         append: true
       become: true
       register: user
@@ -257,6 +282,75 @@
       tags:
         - config
 
+    - name: 'Setup Bash variables'
+      ansible.builtin.lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: "export {{ item.name }}='{{ item.value }}'"
+        regexp: "^\\s*alias {{ item.name }}=.*$"
+        insertafter: "^alias .*="
+      with_items: "{{ bash_variables }}"
+      tags:
+        - config
+
+    - name: 'Config ssh agent'
+      tags:
+        - config
+        - ssh
+      block:
+        - name: 'Ensure systemd folder for user defined units is present'
+          ansible.builtin.file:
+            path: "{{ user['home'] }}/.config/systemd/user"
+            state: directory
+            owner: '{{ username }}'
+            group: '{{ username }}'
+            mode: '0755'
+
+        - name: 'Ensure ssh-agent systemd unit file'
+          ansible.builtin.copy:
+            dest: "{{ user['home'] }}/.config/systemd/user/ssh-agent.service"
+            owner: "{{ user['name'] }}"
+            mode: "0640"
+            content: |
+              [Unit]
+              Description=SSH key agent
+              
+              [Service]
+              Type=simple
+              Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
+              # DISPLAY required for ssh-askpass to work
+              # Environment=DISPLAY=:0
+              ExecStart=/usr/bin/ssh-agent -D -a $SSH_AUTH_SOCK
+              
+              [Install]
+              WantedBy=default.target
+    
+        - name: 'Setup environment variables'
+          ansible.builtin.lineinfile:
+            dest: "/etc/environment"
+            state: present
+            regexp: "^SSH_AUTH_SOCK="
+            line: "SSH_AUTH_SOCK=/run/user/{{ user.uid }}/ssh-agent.socket"
+
+        - name: 'Ensure ssh-aget service is active & running'
+          ansible.builtin.systemd:
+            name: "ssh-agent"
+            state: "started"
+            scope: "user"
+            enabled: true
+            daemon-reload: true 
+          become: true
+          become_user: "{{ user['name'] }}"
+              
+        - name: 'Set ssh config'
+          ansible.builtin.lineinfile:
+            dest: "{{ user['home'] }}/.ssh/config"
+            create: true
+            line: "AddKeysToAgent yes"
+            regexp: "AddKeyToAgent.*"
+            owner: "{{ user['name'] }}"
+            mode: "0640"
+
     - name: 'Config sway'
       tags:
         - config
@@ -338,7 +432,8 @@
     - name: 'Message about docker group'
       ansible.builtin.debug:
         msg: "You have been added to docker group, don't forget to logoff/on or run newgrp"
-    - name: "restart NetworkManager"
+
+    - name: "Restart NetworkManager"
       ansible.builtin.service:
         name: NetworkManager
         state: "restarted"
