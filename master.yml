@@ -282,6 +282,17 @@
       tags:
         - config
 
+    - name: 'Add local bin to the path'
+      ansible.builtin.lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: "export PATH=~/.local/bin:$PATH"
+        regexp: "^\\s*alias {{ item.name }}=.*$"
+        insertafter: "^alias .*="
+      with_items: "{{ bash_variables }}"
+      tags:
+        - config
+
     - name: 'Setup Bash variables'
       ansible.builtin.lineinfile:
         dest: "{{ user['home'] }}/.bashrc"
@@ -356,7 +367,7 @@
         - config
         - sway
       block:
-        - name: 'Install cipboard Manager'
+        - name: 'Install clipboard Manager'
           kewlfft.aur.aur:
             name:
               - clipman
