@@ -27,13 +27,6 @@
         value: 10000
       - name: HISTFILESIZE
         value: 10000
-      # append current session's command to history on execute, clear history cache and reread 
-      # history file, don't wait for exit to do so. 
-      # It results in sharing command history of all open shells, and prevents loosing history 
-      # when the os hangs or for example pycharm is killed with some terminals
-      - name: PROMPT_COMMAND
-        value: "${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
-          
 
   tasks:
     - name: Ensure odoo user exists
@@ -299,6 +292,20 @@
         state: present
         line: "export {{ item.name }}='{{ item.value }}'"
         regexp: "^\\s*alias {{ item.name }}=.*$"
+        insertafter: "^alias .*="
+      with_items: "{{ bash_variables }}"
+      tags:
+        - config
+
+      # append current session's command to history on execute, clear history cache and reread 
+      # history file, don't wait for exit to do so. 
+      # It results in sharing command history of all open shells, and prevents loosing history 
+      # when the os hangs or for example pycharm is killed with some terminals
+    - name: 'Set PROMPT_COMMAND'
+      ansible.builtin.lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: 'export PROMPT_COMMAND="history -a; history -c; history -r;$PROMPT_COMMAND"'
         insertafter: "^alias .*="
       with_items: "{{ bash_variables }}"
       tags:
