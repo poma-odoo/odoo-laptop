@@ -1,2 +1,5 @@
 .vault_pass
 *.pyc
+.*
+collections/
+collections/**/.gitignore

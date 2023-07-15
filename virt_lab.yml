@@ -1,0 +1,75 @@
+- name: "Playbook for virtualization"
+  hosts: all
+
+  vars:
+    username: poma
+    systemwide_env:
+      - key: EDITOR
+        value: vim
+      - key: BROWSER
+        value: google-chrome-stable
+      # make java programs (I mean jetbrains) work with wayland
+      - key: _JAVA_AWT_WM_NONREPARENTING
+        value: "1"
+
+  tasks:
+    - name: "Install dnsmasq"
+      tags:
+        - saas-dev
+        - lab
+      become: true
+      block:
+        - name: "Install dnsmasq package"
+          ansible.builtin.package:
+            name:
+              - dnsmasq
+        - name: "Ensure Networkmanager's dnsmasq config dir exists"
+          ansible.builtin.file:
+            path: "/etc/NetworkManager/dnsmasq.d"
+            state: directory
+            mode: "0755"
+
+        - name: "Setup dnsmasq config for odoo.local"
+          ansible.builtin.template:
+            src: "templates/lab/dnsmasq/odoo.local.j2"
+            dest: "/etc/NetworkManager/dnsmasq.d/odoo.local"
+            owner: "{{ user['name'] }}"
+            group: "{{ user['name'] }}"
+            mode: "0644"
+          notify: "restart NetworkManager"
+
+    - name: "Install docker"
+      ansible.builtin.package:
+        name:
+          - docker
+          - docker-compose
+
+    - name: "Add user to the docker group"
+      ansible.builtin.user:
+        name: "{{ user.name }}"
+        groups: docker
+        append: true
+      notify: "Message about docker group"
+
+    - name: "Install qemu based vistualizasion"
+      ansible.builtin.package:
+        name:
+          - libvirt
+          - bridge-utils
+          - qemu-full
+          - virt-install
+          - virt-viewer
+      become: true
+      tags:
+        - virt
+        - lab
+
+  handlers:
+    - name: "Message about docker group"
+      ansible.builtin.debug:
+        msg: "You have been added to docker group, don't forget to logoff/on or run newgrp"
+
+    - name: "Restart NetworkManager"
+      ansible.builtin.service:
+        name: NetworkManager
+        state: "restarted"

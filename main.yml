@@ -1,0 +1,421 @@
+- name: "Main playbook for the laptop"
+  hosts: all
+
+  vars:
+    username: odoo
+    systemwide_env:
+      - key: EDITOR
+        value: vim
+      - key: BROWSER
+        value: google-chrome-stable
+      # make java programs (I mean jetbrains) work with wayland
+      - key: _JAVA_AWT_WM_NONREPARENTING
+        value: "1"
+
+    command_aliases:
+      - alias: ap
+        command: "sudo ansible-playbook"
+      - alias: adm
+        command: "ansible-doc -t module"
+      - alias: top
+        command: "top -o %MEM"
+      - alias: black
+        command: "black -l99"
+      - alias: code
+        command: "vscodium"
+      - alias: psql
+        command: "PAGER=vd psql --csv -P pager=always -P pager_min_lines"
+      - alias: odev
+        command: "~/src/odev/venv/bin/python /home/odoo/src/odev/main.py"
+      - alias: md
+        command: mkdir -p
+
+    bash_variables:
+      # increase history lines to keep
+      - name: HISTSIZE
+        value: 10000
+      - name: HISTFILESIZE
+        value: 10000
+
+  tasks:
+    - name: Ensure main user's access groups
+      ansible.builtin.user:
+        name: "{{ username }}"
+        create_home: true
+        generate_ssh_key: true
+        ssh_key_type: ed25519
+        group: "{{ username }}"
+      become: true
+      register: user
+      tags:
+        - always
+
+    - name: Set current user sudo nopassword
+      community.general.sudoers:
+        name: "90-{{ user.name }}"
+        nopassword: true
+        user: "{{ user.name }}"
+        commands: ALL
+
+    - name: Create the `aur_builder` user
+      ansible.builtin.user:
+        name: aur_builder
+        create_home: true
+        group: wheel
+      become: true
+      tags:
+        - packages
+
+    - name: Allow the `aur_builder` user to run `sudo pacman` without a password
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/11-install-aur_builder
+        line: "aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+        create: true
+        mode: "0440"
+        validate: "visudo -cf %s"
+      become: true
+      tags:
+        - packages
+
+    - name: "Install AUR package manager yay"
+      ansible.builtin.package:
+        name:
+          - yay
+        state: present
+      become: true
+      tags:
+        - packages
+
+    - name: "Install base packages"
+      kewlfft.aur.aur:
+        name:
+          - wdisplays
+          - wl-clipboard
+          - clipman
+          - vim-ansible
+          - nginx
+          - libsecret
+
+          # discord dependencey,
+          # desktop portals for accessing files or recording screen
+          # there are portals for gnome, kde, gtk, wlroot, ...
+          # https://wiki.archlinux.org/title/XDG_Desktop_Portal
+          - xdg-desktop-portal-termfilechooser-git
+        use: yay
+        state: present
+      become: true
+      become_user: aur_builder
+      tags:
+        - packages
+
+    - name: "Install dev packages"
+      kewlfft.aur.aur:
+        name:
+          - nodejs
+          - gettext
+          - git
+          - pycharm-community-edition
+          # - plantuml
+          - vscodium-bin
+          - ansible-lint
+          - visidata
+          - python-pip
+          - python-aiohttp-cors # required for blackd
+          - python-black
+          - python-setuptools
+          - python37
+          - python38
+          - python39
+          - python310
+          - postgresql
+        use: yay
+        state: present
+      become: true
+      become_user: aur_builder
+      tags:
+        - packages
+
+    - name: "Install dev libs for odoo"
+      kewlfft.aur.aur:
+        name:
+          - python-lxml
+          - python-gitpython
+          - python-pdfminer
+          - python-ladp
+          - python-pypdf2
+        use: yay
+        state: present
+      become: true
+      become_user: aur_builder
+      tags:
+        - packages
+
+    - name: Fix python_ldap problem on odoo V15.0
+      ansible.builtin.file:
+        src: /usr/lib/libldap.so
+        dest: /usr/lib/libldap_r.so
+        state: link
+      become: true
+
+    - name: "Set etc/hosts file for odoo versions"
+      ansible.builtin.lineinfile:
+        dest: /etc/hosts
+        regexp: ".*{{ item }}$"
+        line: "127.0.0.1 odoo{{ item }}"
+        state: present
+      loop: "{{ range(14, 20) | list }}"
+
+    - name: "Enable debugger support (ptrace)"
+      ansible.builtin.lineinfile:
+        dest: /etc/sysctl.d/10-ptrace.conf
+        regexp: "kernel.yama.ptrace_scope.*"
+        line: "kernel.yama.ptrace_scope = 0"
+        state: present
+        create: true
+        mode: "0644"
+
+    - name: "Install utility packages"
+      kewlfft.aur.aur:
+        name:
+          - gimp
+          - keepassxc
+          - mc
+          - google-chrome
+          - firefox
+          - discord
+        use: yay
+        state: present
+      become: true
+      become_user: aur_builder
+      tags:
+        - packages
+
+    - name: "Install multimedia packages"
+      kewlfft.aur.aur:
+        name:
+          - mpv
+          - ffmpeg
+          - youtube-dl
+          - sbagen
+        use: yay
+        state: present
+      become: true
+      become_user: aur_builder
+      tags:
+        - packages
+
+    - name: Check if koofr is installed
+      ansible.builtin.stat:
+        dest: "{{ user.home }}/.koofr-dist"
+      register: koofr_raw
+
+    - name: Install koofr
+      when: not koofr_raw.stat.exists
+      become_user: "{{ user.name }}"
+      become: true
+      block:
+        - name: Create temporary build directory
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: koofr_install
+          register: tempdir
+
+        - name: Download koofr
+          ansible.builtin.unarchive:
+            src: https://app.koofr.net/dl/apps/linux64
+            dest: "{{ tempdir.path }}"
+            remote_src: true
+
+        - name: Install koofr
+          ansible.builtin.shell:
+            cmd: "echo n | ./installer.sh"
+            chdir: "{{ tempdir.path }}/koofr"
+
+        - name: Cleanup koofr install files
+          ansible.builtin.file:
+            dest: "{{ tempdir.path }}"
+            state: absent
+
+    - name: "Setup environment variables"
+      ansible.builtin.lineinfile:
+        dest: "/etc/environment"
+        state: present
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      with_items: "{{ systemwide_env }}"
+      tags:
+        - config
+
+    - name: "Setup command aliases"
+      ansible.builtin.lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: "alias {{ item.alias }}='{{ item.command }}'"
+        regexp: "^\\s*alias {{ item.alias }}=.*$"
+        insertafter: "^alias .*="
+      with_items: "{{ command_aliases }}"
+      tags:
+        - config
+
+    - name: "Add local bin to the path"
+      ansible.builtin.lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: "export PATH=~/.local/bin:$PATH"
+        regexp: "^\\s*alias {{ item.name }}=.*$"
+        insertafter: "^alias .*="
+      with_items: "{{ bash_variables }}"
+      tags:
+        - config
+
+    - name: "Setup Bash variables"
+      ansible.builtin.lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: "export {{ item.name }}='{{ item.value }}'"
+        regexp: "^\\s*alias {{ item.name }}=.*$"
+        insertafter: "^alias .*="
+      with_items: "{{ bash_variables }}"
+      tags:
+        - config
+
+    - name: "Config ssh agent"
+      tags:
+        - config
+        - ssh
+      block:
+        - name: "Ensure systemd folder for user defined units is present"
+          ansible.builtin.file:
+            path: "{{ user['home'] }}/.config/systemd/user"
+            state: directory
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: "0755"
+
+        - name: "Ensure ssh-agent systemd unit file"
+          ansible.builtin.copy:
+            dest: "{{ user['home'] }}/.config/systemd/user/ssh-agent.service"
+            owner: "{{ user['name'] }}"
+            mode: "0640"
+            content: |
+              [Unit]
+              Description=SSH key agent
+
+              [Service]
+              Type=simple
+              Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
+              # DISPLAY required for ssh-askpass to work
+              # Environment=DISPLAY=:0
+              ExecStart=/usr/bin/ssh-agent -D -a $SSH_AUTH_SOCK
+
+              [Install]
+              WantedBy=default.target
+
+        - name: "Setup environment variables"
+          ansible.builtin.lineinfile:
+            dest: "/etc/environment"
+            state: present
+            regexp: "^SSH_AUTH_SOCK="
+            line: "SSH_AUTH_SOCK=/run/user/{{ user.uid }}/ssh-agent.socket"
+
+        - name: "Ensure ssh-aget service is active & running"
+          ansible.builtin.systemd:
+            name: "ssh-agent"
+            state: "started"
+            scope: "user"
+            enabled: true
+            daemon-reload: true
+          become: true
+          become_user: "{{ user['name'] }}"
+
+        - name: "Set ssh config"
+          ansible.builtin.lineinfile:
+            dest: "{{ user['home'] }}/.ssh/config"
+            create: true
+            line: "AddKeysToAgent yes"
+            regexp: "AddKeyToAgent.*"
+            owner: "{{ user['name'] }}"
+            mode: "0640"
+
+    - name: Config sway'
+      tags:
+        - config
+        - sway
+      block:
+        - name: "Sway config folder present"
+          ansible.builtin.file:
+            path: "{{ user['home'] }}/.config/sway/config.d"
+            state: directory
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: "0755"
+
+        - name: "Find dumanaged sway config files"
+          ansible.builtin.find:
+            paths: "{{ user['home'] }}/.config/sway/config.d"
+            excludes: "{{ lookup('ansible.builtin.fileglob', 'templates/sway/*.j2', wantlist=True) | map('basename') | map('regex_replace', '\\.j2$', '') }}"
+          register: unmanaged_sway_configs
+
+        - name: "Sway config backup folder present"
+          ansible.builtin.file:
+            path: "{{ user.home }}/.config/sway/config.d.bak"
+            state: directory
+            owner: "{{ user.name }}"
+            group: "{{ user.name }}"
+            mode: "0755"
+          when: unmanaged_sway_configs.matched > 0
+
+        - name: "Backup unmanaged sway configs"
+          ansible.builtin.copy:
+            src: "{{ item.path }}"
+            dest: "{{ item.path | replace('config.d', 'config.d.bak') }}"
+            mode: "0644"
+          with_items: "{{ unmanaged_sway_configs.files }}"
+
+        - name: "Clear sway default config"
+          ansible.builtin.file:
+            path: "{{ item.path }}"
+            state: absent
+          with_items: "{{ unmanaged_sway_configs.files }}"
+
+        - name: "Setup sway config"
+          ansible.builtin.template:
+            src: "{{ item }}"
+            dest: "{{ user['home'] }}/.config/sway/config.d/{{ item | basename | regex_replace('\\.j2$', '') }}"
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: "0640"
+          with_fileglob:
+            - "templates/sway/*.j2"
+
+        - name: "Ensure sway config folder is loaded"
+          ansible.builtin.lineinfile:
+            dest: "{{ user['home'] }}/.config/sway/config"
+            create: true
+            owner: "{{ username }}"
+            mode: "0640"
+            state: present
+            line: "include $HOME/.config/sway/config.d/*"
+
+          #    - name: 'Setup sway config lock screen'
+          #      ansible.builtin.blockinfile:
+          #        dest: "{{ user['home'] }}/.config/sway/config.d/10-lock"
+          #        create: true
+          #        owner: '{{ username }}'
+          #        state: present
+          #        line: "{{ item }}"
+          #      with_items:
+          #        - set $mod Mod4
+          #        - set $left h
+          #        - set $down j
+          #        - set $up k
+          #        - set $right l
+
+        # validate is not working when sway is running with No DRM backend supplied error
+        # - name: 'ensure sway config is valid'
+        #   ansible.builtin.command: "sway -c {{ user['home'] }}/.config/sway/config --validate --verbose"
+        #   become: true
+        #   become_user: "{{ user['name'] }}"
+        #   # for method:
+    # https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_privilege_escalation.html#may-not-access-environment-variables-populated-by-pamd-systemd
+    #   become_method: machinectl

@@ -1,0 +1,9 @@
+# This will route requests for the odoo.local domain to the 
+# docker container.
+# Place in either /etc/dnsmasq.d (if running standalone)
+# or /etc/NetworkManager/dnsmasq.d (if using Network Manager),
+# then restart the service.
+# Make sure your /etc/resolv.conf file is pointing to the dnsmasq
+# server for name resolution.
+#
+server=/odoo.local/10.53.0.10
