@@ -3,3 +3,9 @@
 .*
 collections/
 collections/**/.gitignore
+collections
+collections/*
+./collections
+./collections/
+./collections/*
+./collections/**/*.*
