@@ -95,6 +95,8 @@
           - vim-ansible
           - nginx
           - libsecret
+          - docker
+
 
           # discord dependencey,
           # desktop portals for accessing files or recording screen
@@ -107,6 +109,17 @@
       become_user: aur_builder
       tags:
         - packages
+
+    - name: "Add user to the docker group"
+      ansible.builtin.user:
+        name: "{{ user.name }}"
+        groups: docker
+        append: true
+
+    - name: Enable docker daemon
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
 
     - name: "Install dev packages"
       kewlfft.aur.aur:
