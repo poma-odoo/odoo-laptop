@@ -194,6 +194,7 @@
     - name: "Install utility packages"
       kewlfft.aur.aur:
         name:
+          - swayimg
           - gimp
           - keepassxc
           - mc
