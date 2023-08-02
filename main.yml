@@ -97,6 +97,10 @@
           - libsecret
           - docker
 
+          # To enable ftp, sftp, ... in file manager
+          - gvfs 
+          - sshfs
+          #- gvfs-smb 
 
           # discord dependencey,
           # desktop portals for accessing files or recording screen
