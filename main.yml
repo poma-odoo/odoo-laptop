@@ -160,6 +160,9 @@
           - python-pdfminer
           - python-ladp
           - python-pypdf2
+
+          # static is patched qt 
+          - wkhtmltopdf-static
         use: yay
         state: present
       become: true
