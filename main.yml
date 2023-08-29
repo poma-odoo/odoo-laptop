@@ -29,6 +29,16 @@
         command: "~/src/odev/venv/bin/python /home/odoo/src/odev/main.py"
       - alias: md
         command: mkdir -p
+    
+    git_aliases:
+      - alias: amenda
+        command: "commit -a --amend --no-edit"
+      - alias: st
+        command: status
+      - alias: cm
+        command: "commit -am"
+      - alias: fp
+        command: "push -f --"
 
     bash_variables:
       # increase history lines to keep
@@ -204,6 +214,7 @@
           - google-chrome
           - firefox
           - discord
+          - aria2
         use: yay
         state: present
       become: true
@@ -275,6 +286,15 @@
         regexp: "^\\s*alias {{ item.alias }}=.*$"
         insertafter: "^alias .*="
       with_items: "{{ command_aliases }}"
+      tags:
+        - config
+
+    - name: "Setup git aliases"
+      community.general.git_config:
+        state: present
+        name: "alias.{{ item.alias }}"
+        value: "'{{ item.command }}'"
+      with_items: "{{ git_aliases }}"
       tags:
         - config
 
