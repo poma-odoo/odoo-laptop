@@ -155,6 +155,7 @@
           - python39
           - python310
           - postgresql
+          - pg_activity
         use: yay
         state: present
       become: true
