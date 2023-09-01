@@ -181,6 +181,22 @@
       tags:
         - packages
 
+    - name: Get geoIP database
+      block:
+        - name: Get geoIP database
+          ansible.builtin.get_url:
+            url: "https://git.io/GeoLite2-City.mmdb"
+            dest: "/usr/share/GeoIP/"
+            mode: '0644'
+          become: true
+      rescue:
+        - name: Get geoIP database from alternative url
+          ansible.builtin.get_url:
+            url: "https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-City.mmdb"
+            dest: "/usr/share/GeoIP/"
+            mode: '0644'
+          become: true
+
     - name: Fix python_ldap problem on odoo V15.0
       ansible.builtin.file:
         src: /usr/lib/libldap.so
