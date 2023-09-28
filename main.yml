@@ -141,7 +141,8 @@
           - nodejs
           - gettext
           - git
-          - pycharm-community-edition
+          # - pycharm-community-edition
+          - pycharm-professional
           # - plantuml
           - vscodium-bin
           - ansible-lint
