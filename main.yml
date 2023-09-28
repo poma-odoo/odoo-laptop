@@ -29,7 +29,7 @@
         command: "~/src/odev/venv/bin/python /home/odoo/src/odev/main.py"
       - alias: md
         command: mkdir -p
-    
+
     git_aliases:
       - alias: amenda
         command: "commit -a --amend --no-edit"
@@ -106,11 +106,12 @@
           - nginx
           - libsecret
           - docker
+          - swaylock-effects
 
           # To enable ftp, sftp, ... in file manager
-          - gvfs 
+          - gvfs
           - sshfs
-          #- gvfs-smb 
+          # - gvfs-smb
 
           # discord dependencey,
           # desktop portals for accessing files or recording screen
@@ -172,8 +173,9 @@
           - python-pdfminer
           - python-ladp
           - python-pypdf2
+          - python-geoip2
 
-          # static is patched qt 
+          # static is patched qt
           - wkhtmltopdf-static
         use: yay
         state: present
@@ -455,6 +457,22 @@
             mode: "0640"
             state: present
             line: "include $HOME/.config/sway/config.d/*"
+
+        - name: "Config swaylock-effect"
+          ansible.builtin.template:
+            src: "templates/swaylock.config.j2"
+            dest: "{{ user['home'] }}/.config/swaylock/config"
+            mode: "0644"
+            owner: "{{ username }}"
+            backup: true
+
+        - name: "Config swayloakc-effect, copy overlay image"
+          ansible.builtin.copy:
+            src: "files/lock_overlay.gif"
+            dest: "{{ user['home'] }}/.config/swaylock/lock_overlay.gif"
+            mode: "0644"
+            owner: "{{ username }}"
+
 
           #    - name: 'Setup sway config lock screen'
           #      ansible.builtin.blockinfile:

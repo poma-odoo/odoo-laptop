@@ -2,15 +2,18 @@
 
 
 ### Idle configuration
+# Switch off displays after 5 mins of inactivity, then lock 30 seconds later
 exec swayidle -w\
-    timeout 1070 'swaylock -f -C ~/.config/swaylock/config'\
-    timeout 770 'swaymsg "output * dpms off"' \
+    timeout 330 'swaylock -f -C ~/.config/swaylock/config'\
+    timeout 300 'swaymsg "output * dpms off"' \
     resume 'swaymsg "output * dpms on"' \
     before-sleep 'swaylock -C ~/.config/swaylock/config'
-# This will lock your screen after 300 seconds of inactivity, then turn off
-# your displays after another 300 seconds, and turn your screens back on when
-# resumed. It will also lock your screen before your computer goes to sleep.
 
 ## Lock Screen
-set $lockme ~/.config/sway/scripts/lockman.sh
+# Switch off screens 10 mins after locking by hand
+set $lockme swayidle \
+    timeout  600 'swaymsg "output * power off"' \
+    resume 'swaymsg "output * power on"' & \
+    swaylock -C ~/.config/swaylock/config ; \
+    kill%%
 
