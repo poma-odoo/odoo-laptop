@@ -107,6 +107,7 @@
           - libsecret
           - docker
           - swaylock-effects
+          - otf-font-awesome
 
           # To enable ftp, sftp, ... in file manager
           - gvfs
