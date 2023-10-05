@@ -157,6 +157,7 @@
           - python38
           - python39
           - python310
+          - pre-commit
           - postgresql
           - pg_activity
         use: yay
