@@ -158,20 +158,22 @@ mode "resize" {
     # down will grow the containers height
     # add shift to move the floating window in this mode
     $bindsym {
-     $left  resize shrink width
-     Left  resize shrink width 
-     $right resize grow width 
-     Right resize grow width 
-     $up    resize shrink height
-     Up    resize shrink height
-     $down  resize grow height 
-     Down  resize grow height 
+     $left  resize shrink width 20
+     Left  resize shrink width 20
+     $right resize grow width 20
+     Right resize grow width 20
+     $up    resize shrink height 20
+     Up    resize shrink height 20
+     $down  resize grow height 20
+     Down  resize grow height 20
 
 {% for d in directions%}
      Shift+${{ d }} move {{ d }}
      Shift+{{ d | capitalize }} move {{ d }}
 {% endfor %}
-
+    
+     c move position center
+     s resize set 640 480
     # Return to default mode
      Return mode "default"
      Escape mode "default"
