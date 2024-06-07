@@ -167,6 +167,7 @@
           - pre-commit
           - postgresql
           - pg_activity
+          - python-tox # for testing
         use: yay
         state: present
       become: true
