@@ -148,13 +148,15 @@
           - nodejs
           - gettext
           - git
-          # - pycharm-community-edition
-          - pycharm-professional
+          - pycharm-community-edition
+          # - pycharm-professional
           # - plantuml
           - vscodium-bin
           - ansible-lint
           - visidata
           - python-pip
+          - python-pipx # for installing python pip executables not available in aur
+          - python-pipenv
           - python-aiohttp-cors # required for blackd
           - python-black
           - python-setuptools
@@ -262,6 +264,11 @@
       become_user: aur_builder
       tags:
         - packages
+
+    #- name: Install pipx packages
+    #  community.general.pipx:
+    #    name:
+    #      - package 1 
 
     - name: Check if koofr is installed
       ansible.builtin.stat:
@@ -473,7 +480,7 @@
             owner: "{{ username }}"
             backup: true
 
-        - name: "Config swayloakc-effect, copy overlay image"
+        - name: "Config swaylock-effect, copy overlay image"
           ansible.builtin.copy:
             src: "files/lock_overlay.gif"
             dest: "{{ user['home'] }}/.config/swaylock/lock_overlay.gif"
