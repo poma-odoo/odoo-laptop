@@ -259,6 +259,7 @@
           - ffmpeg
           - youtube-dl
           - sbagen
+          - solaar # for logitech input devices
         use: yay
         state: present
       become: true
