@@ -12,20 +12,22 @@
 #   input "1386:884:Wacom_Intuos_S_Pad" map_to_output HDMI-A-1
 #   input "1386:884:Wacom_Intuos_S_Pen" map_to_output HDMI-A-1
 #   
-set $laptop <eDP-1>
-set $monitor{% for i in range(1,5) %} DP-{{ i }} HDMI-A-{{ i }}{% endfor %}
+set $laptop eDP-1
+set $monitor-right{% for i in range(1,5) %} DP-{{ i }} {% endfor %}
+set $monitor-left{% for i in range(1,5) %} HDMI-A-{{ i }}{% endfor %}
 
 
-    output eDP-1 position 160,1080 scale 1.2
+    output eDP-1 position 1120,1080 scale 1.2
 {% for i in range(1,5) %}
-    output DP-{{ i }} position 0,0
-    output HDMI-A-{{ i }} position 1920,0
+    output HDMI-A-{{ i }} position 0,0
+    output DP-{{ i }} position 1920,0
 {% endfor %}
 
     workspace 1 output $laptop
-    workspace 2 output $laptop
-    workspace 4 output $monitor
-    workspace 0 output $monitor
+    workspace 2 output $monitor-left
+    workspace 4 output $monitor-right
+    workspace 9 output $monitor-right
+    workspace 0 output $monitor-left
 
 # Clamshell Mode
 bindswitch --reload --locked lid:on output $laptop disable

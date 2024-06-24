@@ -4,8 +4,8 @@
 exec_always ~/.config/sway/scripts/import-gsettings
 
 # Set inner/outer gaps
-gaps inner 2
-gaps outer 1
+gaps inner 4
+gaps outer 0
 
 # Hide titlebar on windows:
 default_border pixel 1
@@ -38,3 +38,10 @@ client.background       #F8F8F2
 bar {
     swaybar_command waybar
 }
+
+# for swayfx
+blur enable
+blur_xray enable
+shadows enable
+corner_radius 5
+layer_effects "waybar" blur enable; shadows enable; corner_radiu 6

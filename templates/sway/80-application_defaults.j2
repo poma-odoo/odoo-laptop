@@ -11,10 +11,16 @@ assign [app_id="jetbrains-pycharm-ce"] 4
 for_window [app_id="jetbrains-pycharm-ce"] focus
 
 assign [class="jetbrains-pycharm"] 4
-for_window [app_id="jetbrains-pycharm-ce"] focus
+for_window [app_id="jetbrains-pycharm"] focus
 
 assign [class="Google-chrome"] 2
 for_window [class="Google-chrome"] focus
+
+assign [app_id="google-chrome"] 2
+for_window [app_id="google-chrome"] focus
+
+# chrome apps
+assign [app_id="chrome-*-Default"] 3
 
 assign [app_id=thunar] 3
 for_window [app_id=thunar] focus
@@ -22,6 +28,7 @@ for_window [app_id=thunar] focus
 assign [class="Telegram"] 4
 for_window [class="Telegram"] focus
 
+assign [app_id="google_chrome" title="Hidden Tabs - Workona*"] scratchpad
 
 for_window [app_id="xed"] focus
 
