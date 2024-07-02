@@ -256,6 +256,7 @@
       kewlfft.aur.aur:
         name:
           - mpv
+          - mpv-mpris # for control mpv with mpris (keyboard shortcuts)
           - ffmpeg
           - youtube-dl
           - sbagen
