@@ -21,8 +21,6 @@
         command: "top -o %MEM"
       - alias: black
         command: "black -l99"
-      - alias: code
-        command: "vscodium"
       - alias: psql
         command: "PAGER=vd psql --csv -P pager=always -P pager_min_lines"
       - alias: odev
