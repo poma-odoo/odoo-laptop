@@ -13,7 +13,7 @@
 #   input "1386:884:Wacom_Intuos_S_Pen" map_to_output HDMI-A-1
 #   
 set $laptop eDP-1
-set $monitor-right{% for i in range(1,5) %} DP-{{ i }} {% endfor %}
+set $monitor-right{% for i in range(1,5) %} DP-{{ i }} {% endfor %} DP-5
 set $monitor-left{% for i in range(1,5) %} HDMI-A-{{ i }}{% endfor %}
 
 
@@ -22,6 +22,8 @@ set $monitor-left{% for i in range(1,5) %} HDMI-A-{{ i }}{% endfor %}
     output HDMI-A-{{ i }} position 0,0
     output DP-{{ i }} position 1920,0
 {% endfor %}
+    # for the monitor on display port bus (serial)
+    output DP-5 position 0,0
 
     workspace 1 output $laptop
     workspace 2 output $monitor-left
