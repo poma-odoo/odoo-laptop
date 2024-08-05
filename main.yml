@@ -269,15 +269,16 @@
     - name: Install pipx packages
       community.general.pipx:
         name:
+          - odoo-analyse
           - odoo-tools
         # could used pipx install --pre-install setuptools odoo-tools but it's not available in ansible
         # also could do pipx inject odoo-tools setuptools using ansible, but it would need an extra step
         # so I just gave access to the system site packages instead:
         system_site_packages: true
 
-    - name: Complete odoo-tools installation
-      ansible.builtin.shell:
-        cmd: "pipx inject odoo-tools setuptools"
+        #    - name: Complete odoo-tools installation
+        #      ansible.builtin.shell:
+        #        cmd: "pipx inject odoo-tools setuptools"
 
     - name: Check if koofr is installed
       ansible.builtin.stat:
