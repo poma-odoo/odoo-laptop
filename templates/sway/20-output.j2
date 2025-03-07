@@ -35,3 +35,6 @@ set $monitor-left{% for i in range(1,5) %} HDMI-A-{{ i }}{% endfor %}
 bindswitch --reload --locked lid:on output $laptop disable
 bindswitch --reload --locked lid:off output $laptop enable
 exec_always ~/.config/sway/scripts/clamshell.sh
+
+# Monitor for display changes
+exec_always ~/.config/sway/scripts/monitor-displays.sh

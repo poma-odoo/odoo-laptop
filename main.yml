@@ -173,6 +173,17 @@
       tags:
         - packages
 
+    - name: "Configure pacman to prevent automatic PostgreSQL updates"
+      ansible.builtin.lineinfile:
+        path: /etc/pacman.conf
+        regexp: '^#?IgnorePkg\s*=.*$'
+        line: "IgnorePkg = postgresql {% if ansible_facts['pacman']['ignorepkg'] is defined %}{{ ansible_facts['pacman']['ignorepkg'] | reject('match', 'postgresql') | join(' ') }}{% endif %}"
+        backrefs: yes
+      become: true
+      tags:
+        - packages
+        - postgresql
+
     - name: "Install dev libs for odoo"
       kewlfft.aur.aur:
         name:
@@ -472,6 +483,24 @@
             mode: "0640"
           with_fileglob:
             - "templates/sway/*.j2"
+
+
+        - name: "Setup sway scripts directory"
+          ansible.builtin.file:
+            path: "{{ user['home'] }}/.config/sway/scripts"
+            state: directory
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: "0755"
+
+        - name: "Copy sway scripts to config directory"
+          ansible.builtin.copy:
+            src: "files/sway/scripts/"
+            dest: "{{ user['home'] }}/.config/sway/scripts/"
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: "0755"
+            directory_mode: "0755"
 
         - name: "Ensure sway config folder is loaded"
           ansible.builtin.lineinfile:
