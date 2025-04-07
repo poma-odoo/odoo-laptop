@@ -129,6 +129,13 @@ $bindsym {
     $mod+e exec thunar
 
 #
+# Clipboard manager
+#
+    $mod+Shift+v exec "clipman pick -t wofi -T'-i' --err-on-no-selection \
+               && wtype -M ctrl -M shift V"
+    $mod+Control+v exec "clipman -P pick -t wofi -T'-i' --err-on-no-selection \
+               && wtype -M ctrl -M shift V"
+#
 # Screenshots
 #
     print exec /usr/share/sway/scripts/grimshot --notify save output

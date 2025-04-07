@@ -104,6 +104,7 @@
           - wdisplays
           - wl-clipboard
           - clipman
+          - wtype
           - vim-ansible
           - nginx
           - libsecret
@@ -438,6 +439,13 @@
         - config
         - sway
       block:
+        - name: Ensure systemd-cat is in the Sway desktop file's Exec line
+          ansible.builtin.lineinfile:
+            path: /usr/share/wayland-sessions/sway.desktop
+            regexp: '^Exec=.*'
+            line: 'Exec=systemd-cat --identifier=sway sway'
+            state: present
+            
         - name: "Sway config folder present"
           ansible.builtin.file:
             path: "{{ user['home'] }}/.config/sway/config.d"
