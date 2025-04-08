@@ -131,9 +131,9 @@ $bindsym {
 #
 # Clipboard manager
 #
-    $mod+Shift+v exec "clipman pick -t wofi -T'-i' --err-on-no-selection \
+    $mod+Shift+v exec "clipman pick --max-items=256 -t wofi -T'-i' --err-on-no-selection \
                && wtype -M ctrl -M shift V"
-    $mod+Control+v exec "clipman -P pick -t wofi -T'-i' --err-on-no-selection \
+    $mod+Control+v exec "clipman -P pick --max-items=256 -t wofi -T'-i' --err-on-no-selection \
                && wtype -M ctrl -M shift V"
 #
 # Screenshots
