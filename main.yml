@@ -24,13 +24,15 @@
       - alias: psql
         command: "PAGER=vd psql --csv -P pager=always -P pager_min_lines"
       - alias: odev
-        command: "~/src/odev/venv/bin/python /home/odoo/src/odev/main.py"
+        command: "/home/odoo/odev/virtualenvs/odev/bin/python /home/odoo/.local/bin/odev"
       - alias: md
         command: mkdir -p
       - alias: gst
         command: git status
-      #- alias: dut
-      #  command: bash -c \'du -hd${2:-1} ${1:-.} | sort --human-numeric-sort --reverse | head -n${3:-5}\' --
+      - alias: dut
+        command: bash -c '"'"'du -hd${2:-1} ${1:-.} | sort --human-numeric-sort --reverse | head -n${3:-5}'"'"' --
+      - alias: cdprj 
+        command: cd $(find ~/src/odoo-ps -maxdepth 1 -mindepth 1 -type d -printf "%T@/%p\n"|sort -r|cut -d"/" -f2- |fzf --preview="ls -F {}")
 
     git_aliases:
       - alias: amenda
@@ -40,7 +42,7 @@
       - alias: cm
         command: "commit -am"
       - alias: fp
-        command: "push -f --"
+        command: "push --force-with-lease --"
 
     bash_variables:
       # increase history lines to keep
