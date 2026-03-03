@@ -112,6 +112,8 @@
           - libsecret
           - docker
           - swaylock-effects
+          # For grimshot, sway's screenshot
+          - sway-contrib
           - otf-font-awesome
           - noto-fonts-emoji
 
@@ -119,6 +121,9 @@
           - gvfs
           - sshfs
           # - gvfs-smb
+          
+          # for syncing to google drive
+          - rclone
 
           # discord dependencey,
           # desktop portals for accessing files or recording screen
@@ -149,7 +154,7 @@
           - nodejs
           - gettext
           - git
-          - pycharm-community-edition
+          - pycharm
           # - pycharm-professional
           # - plantuml
           - vscodium-bin
@@ -256,6 +261,7 @@
           - google-chrome
           - firefox
           - discord
+          - python-discord
           - aria2
         use: yay
         state: present
@@ -436,6 +442,89 @@
             owner: "{{ user['name'] }}"
             mode: "0640"
 
+    - name: "Config google drive sync systemd unit"
+      tags:
+        - config
+        - sync
+      become: true
+      become_user: "{{ user['name'] }}"
+      block:
+        - name: "Ensure systemd folder for user defined units is present"
+          ansible.builtin.file:
+            path: "{{ user['home'] }}/.config/systemd/user"
+            state: directory
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: "0755"
+
+        - name: "Ensure google drive sync systemd unit file" 
+          ansible.builtin.copy:
+            dest: "{{ user['home'] }}/.config/systemd/user/gdrive-sync.service"
+            owner: "{{ user['name'] }}"
+            mode: "0640"
+            content: |
+              [Unit]
+              Description=Google Drive backup sync
+
+              [Service]
+              Type=simple
+              ExecStart=/usr/bin/rclone copy /home/odoo/ActiveSync odoo-gdrive:ActiveSync --verbose --create-empty-src-dirs
+
+        - name: "ensure google drive sync systemd path watcher file"
+          ansible.builtin.copy:
+            dest: "{{ user['home'] }}/.config/systemd/user/gdrive-sync.path"
+            owner: "{{ user['name'] }}"
+            mode: "0640"
+            content: |
+              [Path]
+              PathModified=/home/odoo/ActiveSync
+
+        - name: "Check if rclone is configed"
+          ansible.builtin.shell:
+            cmd: "rclone lsd odoo-gdrive:"
+          register: rclone_check
+
+          ignore_errors: true
+
+        - name: "Config rclone"
+          when: not rclone_check.rc == 0 
+          block:
+            - name: "Prompt user to set up rclone if not configed"
+              ansible.builtin.debug:
+                msg: "rclone not configed, please config remote named odoo-gdrive."  
+        
+            - name: "Check if odoo-gdrive section is in rclone config file"
+              ansible.builtin.shell:
+                cmd: "grep '[odoo-gdrive:]' {{user['home']}}/.config/rclone/rclone.conf"
+              register: gdrive_check
+    
+            - name: "Reconnect odoo-gdrive remote"
+              when: gdrive_check.rc == 0
+              ansible.builtin.shell:
+                cmd: "rclone config reconnect odoo-gdrive"
+            - name: "Config odoo-gdrive remote"
+              when: gdrive_check.rc == 1
+              ansible.builtin.shell:
+                cmd: "rclone config create odoo-gdrive drive --all"
+
+        - name: "Ensure gdrive sync systemd path watcher is active & running"
+          when: rclone_check.rc == 0
+          ansible.builtin.systemd:
+            name: "gdrive-sync.path"
+            state: "started"
+            scope: "user"
+            enabled: true
+            daemon-reload: true
+
+        - name: "Ensure gdrive sync systemd unit is active & running"
+          when: rclone_check.rc == 0
+          ansible.builtin.systemd:
+            name: "gdrive-sync.service"
+            state: "started"
+            scope: "user"
+            enabled: true
+            daemon-reload: true
+
     - name: Config sway'
       tags:
         - config
@@ -456,7 +545,7 @@
             group: "{{ username }}"
             mode: "0755"
 
-        - name: "Find dumanaged sway config files"
+        - name: "Find unmanaged sway config files"
           ansible.builtin.find:
             paths: "{{ user['home'] }}/.config/sway/config.d"
             excludes: "{{ lookup('ansible.builtin.fileglob', 'templates/sway/*.j2', wantlist=True) | map('basename') | map('regex_replace', '\\.j2$', '') }}"
@@ -520,6 +609,43 @@
             mode: "0640"
             state: present
             line: "include $HOME/.config/sway/config.d/*"
+
+        - name: "Config waybar"
+          ansible.builtin.template:
+            src: "templates/waybar.config.j2"
+            dest: "{{ user['home'] }}/.config/waybar/config"
+            mode: "0644"
+            owner: "{{ username }}"
+            backup: true
+
+        - name: "Apply waybar custom widgets configs"
+          ansible.builtin.blockinfile:
+            path: "{{ user['home'] }}/.config/waybar/config"
+            append_newline: true
+            prepend_newline: true
+            insertbefore: "ANSIBLE MANAGED SECTION END"
+            marker: "// Widget: {{ item | basename | regex_replace('\\.config$', '') }} {mark}"
+            block: "{{ lookup('ansible.builtin.template', item) }}"
+          loop: "{{ q('ansible.builtin.fileglob', 'files/waybar/custom/*.config') }}"
+
+
+        - name: "Apply waybar custom widgets styles"
+          ansible.builtin.blockinfile:
+            path: "{{ user['home'] }}/.config/waybar/style.css"
+            append_newline: true
+            prepend_newline: true
+            marker: "/* Widget: {{ item | basename | regex_replace('\\.css$', '') }} {mark} */"
+            block: "{{ lookup('ansible.builtin.template', item) }}"
+          loop: "{{ q('ansible.builtin.fileglob', 'files/waybar/custom/*.css') }}"
+        
+        - name: "Copy waybar custom widget scripts"
+          ansible.builtin.copy:
+            src: "{{ item }}"
+            dest: "{{ user['home'] }}/.config/waybar/scripts"
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: "0755"
+          loop: "{{ q('ansible.builtin.fileglob', 'files/waybar/custom/*.sh') }}"
 
         - name: "Config swaylock-effect"
           ansible.builtin.template:

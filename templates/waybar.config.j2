@@ -32,6 +32,7 @@
         "backlight#icon",
         "backlight#value",
         "tray",
+	"custom/net_quality",
         //"custom/weather",
         "custom/power",
     ],
@@ -203,7 +204,7 @@
          "on-scroll-down": "brightnessctl -c backlight set 1%-",
          "on-scroll-up": "brightnessctl -c backlight set +1%"
     },
-
+    // custom-modules
     "custom/firefox": {
         "format": " ",
         "on-click": "exec firefox",
@@ -239,5 +240,7 @@
         "on-click": "exec xkill",
         "tooltip": false,
     },
-
+    // ANSIBLE MANAGED SECTION
+   
+    // ANSIBLE MANAGED SECTION END"
 }
