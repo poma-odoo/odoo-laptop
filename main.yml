@@ -384,6 +384,17 @@
       tags:
         - config
 
+    - name: "Incremental search history with UP/Down arrows"
+      ansible.builtin.lineinfile:
+        dest: "{{ user['home'] }}/.bashrc"
+        state: present
+        line: "{{ item }}"
+      with_items:
+        - bind '"\e[A"':history-search-backward
+        - bind '"\e[B"':history-search-forward
+      tags:
+        - config
+
     - name: "Config ssh agent"
       tags:
         - config
